@@ -1,6 +1,6 @@
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
-from aiogram.utils import executor
+from aiogram.utils.executor import start_webhook
 from aiogram.utils.markdown import text, bold, italic
 from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -14,6 +14,17 @@ import users
 import expenses
 import exceptions
 import budgets
+
+WEBHOOK_HOST = "35.188.177.177"
+WEBHOOK_PORT = 8443
+WEBHOOK_LISTEN = "0.0.0.0"
+
+WEBHOOK_SSL_CERT = "../url_cert.pem"
+WEBHOOK_SSL_PRIV = "../url_private.key"
+
+WEBHOOK_URL_BASE = f"https://{WEBHOOK_HOST}:{WEBHOOK_PORT}"
+WEBHOOK_URL_PATH = f"/{TOKEN}/"
+WEBHOOK_URL = f"{WEBHOOK_URL_BASE}{WEBHOOK_URL_PATH}"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -188,5 +199,22 @@ async def add_expense(message: types.Message):
     await message.answer(answer_text)
 
 
+async def on_startup(dp):
+    await bot.set_webhook(WEBHOOK_URL)
+
+
+async def on_shutdown(dp):
+    await bot.delete_webhook()
+    await dp.storage.close()
+    await dp.storage.wait_closed()
+
 if __name__ == "__main__":
-    executor.start_polling(dp)
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_URL_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=True,
+        host=WEBHOOK_HOST,
+        port=WEBHOOK_PORT
+    )

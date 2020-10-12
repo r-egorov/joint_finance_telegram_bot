@@ -36,17 +36,17 @@ CREATE TABLE IF NOT EXISTS expenses(
 
 INSERT OR REPLACE INTO categories (category_codename, category_name, is_base_expense, aliases)
 VALUES
-    ("groceries", "продукты", true, "еда"),
-    ("coffee", "кофе", false, "cofix, кофикс"),
-    ("dinner", "обед", true, "столовая, ланч, бизнес-ланч, бизнес ланч"),
-    ("cafe", "кафе", false, "ресторан"),
-    ("transport", "транспорт", true, "метро, автобус, metro"),
-    ("taxi", "такси", false, "яндекс такси, yandex taxi"),
-    ("phone", "телефон", true, "теле2, связь"),
-    ("books", "книги", false, "литература, литра, лит-ра"),
-    ("internet", "интернет", true, "инет, inet"),
-    ("subscriptions", "подписки", false, "подписка"),
-    ("other", "прочее", false, "другое");
+    ("groceries", "продукты", 1, "еда"),
+    ("coffee", "кофе", 0, "cofix, кофикс"),
+    ("dinner", "обед", 1, "столовая, ланч, бизнес-ланч, бизнес ланч"),
+    ("cafe", "кафе", 0, "ресторан"),
+    ("transport", "транспорт", 1, "метро, автобус, metro"),
+    ("taxi", "такси", 0, "яндекс такси, yandex taxi"),
+    ("phone", "телефон", 1, "теле2, связь"),
+    ("books", "книги", 0, "литература, литра, лит-ра"),
+    ("internet", "интернет", 1, "инет, inet"),
+    ("subscriptions", "подписки", 0, "подписка"),
+    ("other", "прочее", 0, "другое");
 
 INSERT OR REPLACE INTO budget (id, name, balance, daily_limit)
 VALUES
