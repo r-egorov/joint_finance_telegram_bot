@@ -1,8 +1,10 @@
 import emoji
 from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup,\
     KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from typing import List
+from expenses import Expense
 
-kb_mrkup_general = ReplyKeyboardMarkup(resize_keyboard=True)
+kb_general = ReplyKeyboardMarkup(resize_keyboard=True)
 
 content_chs_bdgt = "Выбор бюджета " + emoji.emojize(":moneybag:", use_aliases=True)
 content_day_stats = "Траты за день " + emoji.emojize(":date:", use_aliases=True)
@@ -16,8 +18,25 @@ btn_mnth_stats = KeyboardButton(content_mnth_stats)
 btn_last_expns = KeyboardButton(content_last_expns)
 btn_stats = KeyboardButton(content_stats)
 
-kb_mrkup_general.row(btn_chs_bdgt)
-kb_mrkup_general.row(btn_day_stats, btn_last_expns)
-kb_mrkup_general.row(btn_mnth_stats, btn_stats)
+kb_general.row(btn_chs_bdgt)
+kb_general.row(btn_day_stats, btn_last_expns)
+kb_general.row(btn_mnth_stats, btn_stats)
+
+btn_inln_del_expenses = InlineKeyboardButton("Удаление трат", callback_data="deleting_expenses")
+kb_del_expenses = InlineKeyboardMarkup().add(btn_inln_del_expenses)
 
 
+def markup_del_expense(expense: Expense) -> InlineKeyboardMarkup:
+    """
+    Makes a markup of an inline button to delete an expense.
+
+    Parameters:
+        expense: Expense — an expense to be deleted (instances of the Expense
+        class)
+    Returns:
+        kb_mrkup: InlineKeyboardMarkup — a markup for the button
+    """
+    btn_inln_del_exp = InlineKeyboardButton("Удалить трату",
+                                            callback_data=f"del{expense.id}")
+    kb_mrkup = InlineKeyboardMarkup().add(btn_inln_del_exp)
+    return kb_mrkup

@@ -4,6 +4,7 @@ from aiogram.utils import executor
 from aiogram.utils.markdown import text, bold, italic
 from aiogram.types import ParseMode, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from typing import Union
 
 from config import TOKEN, ACCESS_IDS
 from states import UserState
@@ -35,7 +36,7 @@ async def process_setstate_command(message: types.Message):
     await message.answer("State set")
 
 
-async def state_budget_name(message: types.Message):
+async def state_budget_name(message: Union[types.Message, types.CallbackQuery]):
     state = dp.current_state(user=message.from_user.id)
     if await state.get_state() == "UserState:JOINT_BUDGET":
         budget_name = "joint"
@@ -58,7 +59,7 @@ async def register_user(message: types.Message):
 async def main_menu(message: types.Message):
     """ Offers to navigate through the bot with commands """
     answer_text = text("Вы в главном меню.")
-    await message.answer(answer_text, reply_markup=buttons.kb_mrkup_general)
+    await message.answer(answer_text, reply_markup=buttons.kb_general)
 
 
 @dp.message_handler(lambda message: message.text == buttons.content_chs_bdgt,
@@ -93,17 +94,35 @@ async def choose_budget(message: types.Message):
         await message.answer(f"Выбран бюджет - {budget_name}")
 
 
-@dp.message_handler(lambda message: message.text.startswith('/del'),
-                    state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
-async def del_expense(message: types.Message):
+@dp.callback_query_handler(lambda c: c.data == "deleting_expenses",
+                           state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def deleting_expenses_state(callback_query: types.CallbackQuery):
+    """ Sends each expense from the last ten, offering to delete each of them """
+    await bot.answer_callback_query(callback_query.id)
+    budget_name = await state_budget_name(callback_query)
+    budget_id = budgets.get_budget_id(budget_name)
+    last_expenses = expenses.get_last_expenses(callback_query.from_user.id, budget_id)
+    if not last_expenses:
+        await bot.send_message(callback_query.from_user.id, "Трат ещё не было.")
+        return
+    await bot.send_message(callback_query.from_user.id, text(bold("Удаление трат\n\n")),
+                           parse_mode=ParseMode.MARKDOWN)
+    for expense in last_expenses:
+        expense_str = f"- {expense.amount} руб. на {expense.category_name}, добавил {expense.username}\n"
+        await bot.send_message(callback_query.from_user.id, expense_str,
+                               reply_markup=buttons.markup_del_expense(expense))
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('del'),
+                           state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def del_expense(callback_query: types.CallbackQuery):
     """ Deletes an expense from the table expenses"""
-    try:
-        row_id = int(message.text[4:])
-        expenses.delete_expense(row_id)
-        answer = "Удалил!"
-    except ValueError:
-        answer = "Не понял, попробуй формат сообщения \"/del <id расхода>\""
-    await message.answer(answer)
+    await bot.answer_callback_query(callback_query.id)
+
+    row_id = int(callback_query.data[3:])
+    expenses.delete_expense(row_id)
+    answer = "Удалил!"
+    await bot.send_message(callback_query.from_user.id, answer)
 
 
 @dp.message_handler(lambda message: message.text == buttons.content_mnth_stats,
@@ -148,19 +167,21 @@ async def get_last_expenses(message: types.Message):
     budget_id = budgets.get_budget_id(budget_name)
     last_expenses = expenses.get_last_expenses(message.from_user.id, budget_id)
     budget_name_mrkdwn = budget_name.replace("_", "\\_")
+    kb = None
     answer_text = text(bold(f"Последние траты\n\n") +
                        f"Бюджет: \"{budget_name_mrkdwn}\"\n\n")
     if not last_expenses:
         answer_text += "Трат ещё не было."
     else:
         expenses_to_send = [
-            f"- {expense.amount} руб. на {expense.category_name}, добавил {expense.username} — нажми "
-            f"/del{expense.id} для удаления\n"
+            f"- {expense.amount} руб. на {expense.category_name}, добавил {expense.username}\n"
             for expense in last_expenses
         ]
         answer_text += "\n".join(expenses_to_send)
-    await message.answer(answer_text,
-                         parse_mode=ParseMode.MARKDOWN)
+        kb = buttons.kb_del_expenses
+    params = {"text": answer_text, "parse_mode": ParseMode.MARKDOWN}
+    if kb: params["reply_markup"] = kb
+    await message.answer(**params)
 
 
 @dp.message_handler(state=UserState.PERSONAL_BUDGET)
