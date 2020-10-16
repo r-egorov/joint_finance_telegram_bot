@@ -62,12 +62,17 @@ def get_day_stats(budget_id: int) -> str:
         "SELECT SUM(amount) "
         "FROM expenses "
         "WHERE DATE(created) == DATE('now', 'localtime')"
+        f"AND budget_id = {budget_id}"
     )
     result = cursor.fetchone()
-    if not result:
-        return "Сегодня ещё не было расходов"
-    today_exp_sum = result[0]
-    return f"Всего потрачено: {today_exp_sum} руб."
+    budget_name_mrkdwn = budgets.get_budget_name(budget_id).replace("_", "\\_")
+    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n"
+    if result[0] is None:
+        stats += "Сегодня ещё не было расходов."
+    else:
+        today_exp_sum = result[0]
+        stats += f"Всего потрачено: {today_exp_sum} руб."
+    return stats
 
 
 def get_month_stats(budget_id: int) -> str:
@@ -79,6 +84,8 @@ def get_month_stats(budget_id: int) -> str:
     Returns:
         stats: str — the statistics of the budget for the month, in str format
     """
+    budget_name_mrkdwn = budgets.get_budget_name(budget_id).replace("_", "\\_")
+    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n"
     now = get_datetimenow()
     first_day_of_the_month = f"{now.year:04d}-{now.month:02d}-01"
     cursor = db.get_cursor()
@@ -89,7 +96,8 @@ def get_month_stats(budget_id: int) -> str:
     )
     result = cursor.fetchone()
     if not result[0]:
-        return "В этом месяце ещё не было расходов."
+        stats += "В этом месяце ещё не было расходов."
+        return stats
     all_month_expenses = result[0]
     cursor.execute(
         "SELECT DISTINCT user_id "
@@ -115,9 +123,6 @@ def get_month_stats(budget_id: int) -> str:
         cursor.execute(queries[i])
         row = cursor.fetchone()
         result.append(row)
-
-    budget_name = budgets.get_budget_name(budget_id)
-    stats = f"Бюджет: \"{budget_name}\"\n"
     stats_strs = [
         f"Пользователь {row[0]} потратил {row[1]}.\n"
         for row in result
@@ -140,7 +145,7 @@ def get_overall_stats(budget_id: int) -> str:
     return "какая-то статистика"
 
 
-def last(user_id: int, budget_id: int) -> List[Expense]:
+def get_last_expenses(user_id: int, budget_id: int) -> List[Expense]:
     """
     Returns last ten expenses from the selected budget of the User
     Parameters:

@@ -135,7 +135,7 @@ async def get_overall_statistics(message: types.Message):
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     stats_str = expenses.get_overall_stats(budget_id)
-    await message.answer(text(bold(f"Общая статистика по бюджету \"{budget_name}\"\n")) +
+    await message.answer(text(bold(f"Общая статистика\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)
 
@@ -146,17 +146,21 @@ async def get_last_expenses(message: types.Message):
     """ Gets last ten expenses for the current budget """
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
-    last_expenses = expenses.last(message.from_user.id, budget_id)
+    last_expenses = expenses.get_last_expenses(message.from_user.id, budget_id)
+    budget_name_mrkdwn = budget_name.replace("_", "\\_")
+    answer_text = text(bold(f"Последние траты\n") +
+                       f"Бюджет: \"{budget_name_mrkdwn}\"\n")
     if not last_expenses:
-        await message.answer("Трат ещё не было.")
-        return
-    expenses_to_send = [
-        f"- {expense.amount} руб. на {expense.category_name}, добавил {expense.username} — нажми "
-        f"/del{expense.id} для удаления\n"
-        for expense in last_expenses
-    ]
-    answer_text = text(bold(f"Последние траты в \"{budget_name}\"\n") + "\n".join(expenses_to_send))
-    await message.answer(answer_text, parse_mode=ParseMode.MARKDOWN)
+        answer_text += "Трат ещё не было."
+    else:
+        expenses_to_send = [
+            f"- {expense.amount} руб. на {expense.category_name}, добавил {expense.username} — нажми "
+            f"/del{expense.id} для удаления\n"
+            for expense in last_expenses
+        ]
+        answer_text += "\n".join(expenses_to_send)
+    await message.answer(answer_text,
+                         parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.message_handler(state=UserState.PERSONAL_BUDGET)
