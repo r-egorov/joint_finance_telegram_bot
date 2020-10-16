@@ -10,3 +10,4 @@ colorama==0.4.3
 idna==2.10
 pytz==2020.1
 yarl==1.5.1
+emoji==0.6.0

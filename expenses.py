@@ -48,6 +48,28 @@ def add_expense(raw_message: str, user_id: int, budget_id: int) -> Expense:
                    category_name=category.category_name)
 
 
+def get_day_stats(budget_id: int) -> str:
+    """
+    Gets statistics for the day
+
+    Parameters:
+        budget_id: int — the budget's id
+    Returns:
+        stats: str — the statistics of the budget for the month, in str format
+    """
+    cursor = db.get_cursor()
+    cursor.execute(
+        "SELECT SUM(amount) "
+        "FROM expenses "
+        "WHERE DATE(created) == DATE('now', 'localtime')"
+    )
+    result = cursor.fetchone()
+    if not result:
+        return "Сегодня ещё не было расходов"
+    today_exp_sum = result[0]
+    return f"Всего потрачено: {today_exp_sum} руб."
+
+
 def get_month_stats(budget_id: int) -> str:
     """
     Gets statistics for the month
@@ -95,16 +117,27 @@ def get_month_stats(budget_id: int) -> str:
         result.append(row)
 
     budget_name = budgets.get_budget_name(budget_id)
+    stats = f"Бюджет: \"{budget_name}\"\n"
     stats_strs = [
-        f"В этом месяце в бюджете \"{budget_name}\" "
-        f"пользователь {row[0]} потратил {row[1]}.\n"
+        f"Пользователь {row[0]} потратил {row[1]}.\n"
         for row in result
     ]
-    stats = ""
     for string in stats_strs:
         stats += string
-    stats += f"Всего за месяц потрачено: {all_month_expenses}\n"
+    stats += f"Всего потрачено: {all_month_expenses}\n"
     return stats
+
+
+def get_overall_stats(budget_id: int) -> str:
+    """
+    Gets overall statistics
+
+    Parameters:
+        budget_id: int — the budget's id
+    Returns:
+        stats: str — the statistics of the budget for the month, in str format
+    """
+    return "какая-то статистика"
 
 
 def last(user_id: int, budget_id: int) -> List[Expense]:

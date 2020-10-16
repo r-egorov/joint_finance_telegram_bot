@@ -9,6 +9,8 @@ from config import TOKEN, ACCESS_IDS
 from states import UserState
 from middlewares import AccessMiddleware
 
+import buttons
+import emoji
 import re
 import users
 import expenses
@@ -33,13 +35,13 @@ async def process_setstate_command(message: types.Message):
     await message.answer("State set")
 
 
-@dp.message_handler(commands=['start'])
-async def process_start_command(message: types.Message):
-    """ Greets, offers /help """
-    await message.answer(
-        "Привет!\nЯ — бот для учёта расходов и ведения бюджета!\n"
-        "Напиши /help, чтобы узнать, как мной пользоваться!\n"
-    )
+async def state_budget_name(message: types.Message):
+    state = dp.current_state(user=message.from_user.id)
+    if await state.get_state() == "UserState:JOINT_BUDGET":
+        budget_name = "joint"
+    else:
+        budget_name = message.from_user.username + "_personal"
+    return budget_name
 
 
 @dp.message_handler(lambda message: not users.user_exists(message.from_user.id))
@@ -52,27 +54,15 @@ async def register_user(message: types.Message):
         return await message.answer(answer_text)
 
 
-@dp.message_handler(state="*", commands=['help'])
-async def process_help_command(message: types.Message):
-    """ Gets "/help" message, tells about hte bot's functions"""
-    message_text = text(bold("Вам доступны следующие команды:\n\n") +
-                        italic("Просмотр последних трат текущего бюджета: ") + "/getlastexpenses\n" +
-                        italic("Сменить бюджет: ") + "/choosebudget\n")
-    await message.answer(message_text, parse_mode=ParseMode.MARKDOWN)
-
-
-@dp.message_handler(state="*", commands=["main_menu"])
+@dp.message_handler(state="*", commands=["main_menu", "start"])
 async def main_menu(message: types.Message):
     """ Offers to navigate through the bot with commands """
-    message_text = text(bold("Вам доступны следующие команды:\n\n") +
-                        italic("Выбор бюджета: ") + "/choosebudget\n")
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    choose_budget_button = KeyboardButton("/choosebudget")
-    keyboard.add(choose_budget_button, "/getlastexpenses", "/getstats")
-    await message.answer(message_text, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
+    answer_text = text("Вы в главном меню.")
+    await message.answer(answer_text, reply_markup=buttons.kb_mrkup_general)
 
 
-@dp.message_handler(state="*", commands=["choosebudget"])
+@dp.message_handler(lambda message: message.text == buttons.content_chs_bdgt,
+                    state="*")
 async def choose_budget_menu(message: types.Message):
     """ Offers to choose the budget: personal or joint """
     budgets_list = budgets.get_all_budgets(message.from_user.id)
@@ -116,29 +106,45 @@ async def del_expense(message: types.Message):
     await message.answer(answer)
 
 
-@dp.message_handler(state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET],
-                    commands=["getstats"])
-async def get_statistics(message: types.Message):
+@dp.message_handler(lambda message: message.text == buttons.content_mnth_stats,
+                    state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def get_month_statistics(message: types.Message):
     """ Gets month stats for the current budget """
-    state = dp.current_state(user=message.from_user.id)
-    if await state.get_state() == "UserState:JOINT_BUDGET":
-        budget_name = "joint"
-    else:
-        budget_name = message.from_user.username + "_personal"
+    budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     stats_str = expenses.get_month_stats(budget_id)
-    await message.answer(stats_str)
+    await message.answer(text(bold("Расходы за месяц\n")) +
+                         stats_str,
+                         parse_mode=ParseMode.MARKDOWN)
 
 
-@dp.message_handler(state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET],
-                    commands=["getlastexpenses"])
+@dp.message_handler(lambda message: message.text == buttons.content_day_stats,
+                    state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def get_day_statistics(message: types.Message):
+    budget_name = await state_budget_name(message)
+    budget_id = budgets.get_budget_id(budget_name)
+    stats_str = expenses.get_day_stats(budget_id)
+    await message.answer(text(bold("Расходы за сегодня\n")) +
+                         stats_str,
+                         parse_mode=ParseMode.MARKDOWN)
+
+
+@dp.message_handler(lambda message: message.text == buttons.content_stats,
+                    state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def get_overall_statistics(message: types.Message):
+    budget_name = await state_budget_name(message)
+    budget_id = budgets.get_budget_id(budget_name)
+    stats_str = expenses.get_overall_stats(budget_id)
+    await message.answer(text(bold(f"Общая статистика по бюджету \"{budget_name}\"\n")) +
+                         stats_str,
+                         parse_mode=ParseMode.MARKDOWN)
+
+
+@dp.message_handler(lambda message: message.text == buttons.content_last_expns,
+                    state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
 async def get_last_expenses(message: types.Message):
     """ Gets last ten expenses for the current budget """
-    state = dp.current_state(user=message.from_user.id)
-    if await state.get_state() == "UserState:JOINT_BUDGET":
-        budget_name = "joint"
-    else:
-        budget_name = message.from_user.username + "_personal"
+    budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     last_expenses = expenses.last(message.from_user.id, budget_id)
     if not last_expenses:
