@@ -113,7 +113,7 @@ async def get_month_statistics(message: types.Message):
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     stats_str = expenses.get_month_stats(budget_id)
-    await message.answer(text(bold("Расходы за месяц\n")) +
+    await message.answer(text(bold("Расходы за месяц\n\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)
 
@@ -124,7 +124,7 @@ async def get_day_statistics(message: types.Message):
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     stats_str = expenses.get_day_stats(budget_id)
-    await message.answer(text(bold("Расходы за сегодня\n")) +
+    await message.answer(text(bold("Расходы за сегодня\n\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)
 
@@ -135,7 +135,7 @@ async def get_overall_statistics(message: types.Message):
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
     stats_str = expenses.get_overall_stats(budget_id)
-    await message.answer(text(bold(f"Общая статистика\n")) +
+    await message.answer(text(bold(f"Общая статистика\n\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)
 
@@ -148,8 +148,8 @@ async def get_last_expenses(message: types.Message):
     budget_id = budgets.get_budget_id(budget_name)
     last_expenses = expenses.get_last_expenses(message.from_user.id, budget_id)
     budget_name_mrkdwn = budget_name.replace("_", "\\_")
-    answer_text = text(bold(f"Последние траты\n") +
-                       f"Бюджет: \"{budget_name_mrkdwn}\"\n")
+    answer_text = text(bold(f"Последние траты\n\n") +
+                       f"Бюджет: \"{budget_name_mrkdwn}\"\n\n")
     if not last_expenses:
         answer_text += "Трат ещё не было."
     else:

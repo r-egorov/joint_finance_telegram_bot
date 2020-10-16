@@ -66,7 +66,7 @@ def get_day_stats(budget_id: int) -> str:
     )
     result = cursor.fetchone()
     budget_name_mrkdwn = budgets.get_budget_name(budget_id).replace("_", "\\_")
-    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n"
+    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n\n"
     if result[0] is None:
         stats += "Сегодня ещё не было расходов."
     else:
@@ -85,7 +85,7 @@ def get_month_stats(budget_id: int) -> str:
         stats: str — the statistics of the budget for the month, in str format
     """
     budget_name_mrkdwn = budgets.get_budget_name(budget_id).replace("_", "\\_")
-    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n"
+    stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n\n"
     now = get_datetimenow()
     first_day_of_the_month = f"{now.year:04d}-{now.month:02d}-01"
     cursor = db.get_cursor()
