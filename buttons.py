@@ -3,6 +3,7 @@ from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup,\
     KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from typing import List
 from expenses import Expense
+from budgets import Budget
 
 kb_general = ReplyKeyboardMarkup(resize_keyboard=True)
 
@@ -39,4 +40,35 @@ def markup_del_expense(expense: Expense) -> InlineKeyboardMarkup:
     btn_inln_del_exp = InlineKeyboardButton("Удалить трату",
                                             callback_data=f"del{expense.id}")
     kb_mrkup = InlineKeyboardMarkup().add(btn_inln_del_exp)
+    return kb_mrkup
+
+
+def btn_chs_budget(budget: Budget) -> InlineKeyboardButton:
+    """
+    Makes a markup of an inline button to choose a budget
+
+    Parameters:
+        budget: Budget — an instance of the Budget class
+    Returns:
+        btn_inln_chs_budget: InlineKeyboardButton — an inline button to choose the budget
+    """
+    btn_inln_chs_budget = InlineKeyboardButton(f"Выбрать - \"{budget.name}\"",
+                                               callback_data=f"choose{budget.id}")
+    return btn_inln_chs_budget
+
+
+def mrkup_chs_budget(budgets_list: List[Budget]) -> InlineKeyboardMarkup:
+    """
+    Makes a markup of as many inline buttons as the user has
+
+    Parameters:
+        budgets_list: List[Budget] — a list of budgets the user has
+    Returns:
+        kb_mrkup: InlineKeyboardMarkup — a markup of buttons to choose the
+        budget
+    """
+    kb_mrkup = InlineKeyboardMarkup()
+    for budget in budgets_list:
+        btn_inln_chs_budget = btn_chs_budget(budget)
+        kb_mrkup.add(btn_inln_chs_budget)
     return kb_mrkup

@@ -133,16 +133,30 @@ def get_month_stats(budget_id: int) -> str:
     return stats
 
 
-def get_overall_stats(budget_id: int) -> str:
+def get_overall_stats(user_id: int) -> str:
     """
-    Gets overall statistics
+    Gets overall statistics: how much user spent this month
 
     Parameters:
-        budget_id: int — the budget's id
+        user_id: int — the budget's id
     Returns:
         stats: str — the statistics of the budget for the month, in str format
     """
-    return "какая-то статистика"
+    stats = ""
+    cursor = db.get_cursor()
+    cursor.execute(
+        "SELECT SUM(amount) "
+        "FROM expenses "
+        f"WHERE user_id = {user_id}"
+    )
+    overall_expenses = cursor.fetchone()
+    if not overall_expenses:
+        stats += "В этом месяце трат не было.\n"
+        return stats
+    else:
+        stats += f"Всего потрачено: {overall_expenses[0]}\n\n"
+
+    return stats
 
 
 def get_last_expenses(user_id: int, budget_id: int) -> List[Expense]:

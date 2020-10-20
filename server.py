@@ -68,30 +68,30 @@ async def choose_budget_menu(message: types.Message):
     """ Offers to choose the budget: personal or joint """
     budgets_list = budgets.get_all_budgets(message.from_user.id)
     budgets_list_rows = [
-        f"/id{budget.id} - {budget.name}, balance: {budget.balance}, daily limit: {budget.daily_limit}"
+        f"{budget.name}, balance: {budget.balance}, daily limit: {budget.daily_limit}"
         for budget in budgets_list
     ]
     answer_text = text("Вам доступны следующие бюджеты:" +
                        "\n\n" +
-                       "\n".join(budgets_list_rows) +
-                       "\n\nЧтобы выбрать бюджет, нажмите на его ID.")
+                       "\n".join(budgets_list_rows))
+    kb_mrkup = buttons.mrkup_chs_budget(budgets_list)
     await UserState.CHOOSE_BUDGET.set()
-    await message.answer(answer_text)
+    await message.answer(answer_text, reply_markup=kb_mrkup)
 
 
-@dp.message_handler(state=UserState.CHOOSE_BUDGET)
-async def choose_budget(message: types.Message):
+@dp.callback_query_handler(lambda c: re.match(r"^choose\d+$", c.data),
+                           state=UserState.CHOOSE_BUDGET)
+async def choose_budget(callback_query: types.CallbackQuery):
     """ Chooses the budget, sets the corresponding state to the user """
-    if not re.match(r"^/id\d+$", message.text):
-        await message.answer("Пожалуйста, выберите нужный ID бюджета.")
+    await bot.answer_callback_query(callback_query.id)
+    budget_id = int(re.search(r"^choose(\d+)$", callback_query.data).group(1))
+    budget_name = budgets.get_budget_name(budget_id)
+    if budget_name == "joint":
+        await UserState.JOINT_BUDGET.set()
     else:
-        budget_id = int(re.search(r"^/id(\d+)$", message.text).group(1))
-        budget_name = budgets.get_budget_name(budget_id)
-        if budget_name == "joint":
-            await UserState.JOINT_BUDGET.set()
-        else:
-            await UserState.PERSONAL_BUDGET.set()
-        await message.answer(f"Выбран бюджет - {budget_name}")
+        await UserState.PERSONAL_BUDGET.set()
+    await bot.send_message(callback_query.from_user.id,
+                           f"Выбран бюджет - {budget_name}")
 
 
 @dp.callback_query_handler(lambda c: c.data == "deleting_expenses",
@@ -153,7 +153,7 @@ async def get_day_statistics(message: types.Message):
 async def get_overall_statistics(message: types.Message):
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
-    stats_str = expenses.get_overall_stats(budget_id)
+    stats_str = expenses.get_overall_stats(message.from_user.id)
     await message.answer(text(bold(f"Общая статистика\n\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)
