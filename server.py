@@ -9,6 +9,7 @@ from typing import Union
 from config import TOKEN, ACCESS_IDS
 from states import UserState
 from middlewares import AccessMiddleware
+from categories import Categories
 
 import buttons
 import emoji
@@ -77,6 +78,20 @@ async def choose_budget_menu(message: types.Message):
     kb_mrkup = buttons.mrkup_chs_budget(budgets_list)
     await UserState.CHOOSE_BUDGET.set()
     await message.answer(answer_text, reply_markup=kb_mrkup)
+
+
+@dp.message_handler(commands=["list_categories"],
+                    state="*")
+async def list_categories(message: types.Message):
+    """
+    Sends a list of categories to the user
+    """
+    categories_list = Categories().get_all_categories()
+    categories_strs = [text(bold(f"\"{c.category_name.capitalize()}\"\n") + f"Теги: {c.aliases}\n")
+                       for c in categories_list]
+    answer_text = "\n".join(categories_strs)
+    await message.answer(text(bold("Список категорий\n\n") +
+                              answer_text), parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.callback_query_handler(lambda c: re.match(r"^choose\d+$", c.data),
