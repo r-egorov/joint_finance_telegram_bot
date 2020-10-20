@@ -2,12 +2,12 @@ from aiogram.types import User
 from typing import Dict, List, NamedTuple
 
 import db
-import budgets
 import states
+
 
 class BotUser(NamedTuple):
     """ User structure """
-    user_id: int
+    id: int
     username: str
 
 
