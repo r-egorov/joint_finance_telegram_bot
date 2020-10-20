@@ -1,5 +1,5 @@
 import db
-import users
+from users import BotUser
 from typing import Dict, List, Tuple, NamedTuple
 
 
@@ -119,3 +119,29 @@ def set_daily_limit(budget_id: int, daily_limit: int):
     """
     column_value = {"daily_limit": daily_limit}
     db.update("balance", budget_id, column_value)
+
+
+def get_all_users(budget_id: int) -> List[BotUser]:
+    """
+    Counts users in the budget
+
+    Parameters:
+        budget_id: int — the id of the budget
+    Returns:
+        users_list: List[BotUser] — a list of all the users in the budget
+    """
+    user_list = []
+    cursor = db.get_cursor()
+    cursor.execute(
+        "SELECT u.id, u.username "
+        "FROM users u "
+        "JOIN userBudgetMap ubm "
+        "ON u.id = ubm.user_id "
+        "JOIN budget b "
+        "ON ubm.budget_id = b.id "
+        f"WHERE b.id = {budget_id}"
+    )
+    result = cursor.fetchall()
+    for row in result:
+        user_list.append(BotUser(id=row[0], username=row[1]))
+    return user_list

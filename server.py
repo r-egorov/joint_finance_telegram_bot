@@ -206,6 +206,7 @@ async def add_expense(message: types.Message):
 async def add_expense(message: types.Message):
     """ Adds an expense to the needed budget """
     budget_id = budgets.get_budget_id("joint")
+    users_list = budgets.get_all_users(budget_id)
     try:
         expense = expenses.add_expense(message.text, message.from_user.id,
                                        budget_id)
@@ -216,6 +217,17 @@ async def add_expense(message: types.Message):
         f"В бюждет \"joint\" "
         f"добавлена трата {expense.amount} руб. на {expense.category_name}.\n"
     )
+    for user in users_list:
+        if user.id == message.from_user.id:
+            continue
+        else:
+            await bot.send_message(user.id,
+                                   (text(bold("В бюджет \"joint\" была добавлена трата\n\n") +
+                                         f"Добавил: {message.from_user.username}\n" +
+                                         f"Сумма: {expense.amount}\n" +
+                                         f"Категория: {expense.category_name}\n")
+                                    ),
+                                   parse_mode=ParseMode.MARKDOWN)
     await message.answer(answer_text)
 
 
