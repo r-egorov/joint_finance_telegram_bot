@@ -75,23 +75,23 @@ def get_day_stats(budget_id: int) -> str:
     return stats
 
 
-def get_month_stats(budget_id: int) -> str:
+def get_month_stats(budget_id: int, year_month: str) -> str:
     """
     Gets statistics for the month
 
     Parameters:
         budget_id: int — the budget's id
+        year_month: str — a year and a month in '%Y-%m' format
     Returns:
         stats: str — the statistics of the budget for the month, in str format
     """
     budget_name_mrkdwn = budgets.get_budget_name(budget_id).replace("_", "\\_")
     stats = f"Бюджет: \"{budget_name_mrkdwn}\"\n\n"
-    now = get_datetimenow()
-    first_day_of_the_month = f"{now.year:04d}-{now.month:02d}-01"
     cursor = db.get_cursor()
     cursor.execute(
         "SELECT SUM(amount)"
-        f"FROM expenses WHERE DATE(created) >= '{first_day_of_the_month}' "
+        "FROM expenses "
+        f"WHERE STRFTIME('%Y-%m', created) = '{year_month}' "
         f"AND budget_id = {budget_id}"
     )
     result = cursor.fetchone()
@@ -115,7 +115,7 @@ def get_month_stats(budget_id: int) -> str:
         "ON e.user_id = u.id "
         f"WHERE e.budget_id = {budget_id} "
         f"AND e.user_id = {user_id} AND "
-        f"DATE(created) >= '{first_day_of_the_month}'"
+        f"STRFTIME('%Y-%m', created) = '{year_month}'"
         for user_id in user_ids
     ]
     result = []
@@ -208,6 +208,13 @@ def _parse_message(raw_message: str) -> ParsedMessage:
     amount = re_result.group(1).strip()
     category_text = re_result.group(2).strip().lower()
     return ParsedMessage(amount=int(amount), category_text=category_text)
+
+
+def get_year_month_now() -> str:
+    """ Returns this month's year-month in '%Y-%m' format """
+    now = get_datetimenow()
+    year_month = f"{now.year:04d}-{now.month:02d}"
+    return year_month
 
 
 def get_timenow_formatted() -> str:

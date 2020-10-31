@@ -146,7 +146,8 @@ async def get_month_statistics(message: types.Message):
     """ Gets month stats for the current budget """
     budget_name = await state_budget_name(message)
     budget_id = budgets.get_budget_id(budget_name)
-    stats_str = expenses.get_month_stats(budget_id)
+    now_year_month = expenses.get_year_month_now()
+    stats_str = expenses.get_month_stats(budget_id, now_year_month)
     await message.answer(text(bold("Расходы за месяц\n\n")) +
                          stats_str,
                          parse_mode=ParseMode.MARKDOWN)

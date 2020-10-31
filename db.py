@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from typing import Dict, List
+from datetime import date
 
 
 db_path = os.path.join("db", "finance.db")
@@ -105,6 +106,28 @@ def delete(table: str, row_id: int):
     row_id = int(row_id)
     cursor.execute(f"DELETE FROM {table} WHERE id={row_id}")
     conn.commit()
+
+
+def get_budget_months(budget_id: int) -> List:
+    """
+    Gets a list of months in which expenses were added in the budget
+
+    Parameters:
+          budget_id: int — the budget's id
+    Returns:
+          months_list: List — a list of months needed
+    """
+    cursor.execute(
+        "SELECT DISTINCT STRFTIME('%Y-%m', created) "
+        "FROM expenses "
+        f"WHERE budget_id = {budget_id}"
+    )
+    rows = cursor.fetchall()
+    months_list = []
+    for row in rows:
+        months_list.append(row[0])
+    print(months_list)
+    return months_list
 
 
 check_db_exists()
