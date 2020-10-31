@@ -12,7 +12,6 @@ from middlewares import AccessMiddleware
 from categories import Categories
 
 import buttons
-import emoji
 import re
 import users
 import expenses
@@ -140,6 +139,24 @@ async def del_expense(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, answer)
 
 
+@dp.callback_query_handler(lambda c: c.data.startswith('mstats'),
+                           state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
+async def choose_month_stats(callback_query: types.CallbackQuery):
+    """ Gets stats for the chosen month """
+    await bot.answer_callback_query(callback_query.id)
+
+    year_month = str(callback_query.data[6:])
+    budget_name = await state_budget_name(callback_query)
+    budget_id = budgets.get_budget_id(budget_name)
+    stats_str = expenses.get_month_stats(budget_id, year_month)
+    month_name = expenses.month_name(year_month)
+    await bot.send_message(callback_query.from_user.id,
+                           text(bold("Расходы за выбранный месяц\n{0}\n\n"
+                                     .format(month_name))) +
+                           stats_str,
+                           parse_mode=ParseMode.MARKDOWN)
+
+
 @dp.message_handler(lambda message: message.text == buttons.content_mnth_stats,
                     state=[UserState.JOINT_BUDGET, UserState.PERSONAL_BUDGET])
 async def get_month_statistics(message: types.Message):
@@ -148,9 +165,11 @@ async def get_month_statistics(message: types.Message):
     budget_id = budgets.get_budget_id(budget_name)
     now_year_month = expenses.get_year_month_now()
     stats_str = expenses.get_month_stats(budget_id, now_year_month)
+    kb = buttons.mrkup_chs_month_stats(expenses.get_budget_months(budget_id))
     await message.answer(text(bold("Расходы за месяц\n\n")) +
                          stats_str,
-                         parse_mode=ParseMode.MARKDOWN)
+                         parse_mode=ParseMode.MARKDOWN,
+                         reply_markup=kb)
 
 
 @dp.message_handler(lambda message: message.text == buttons.content_day_stats,

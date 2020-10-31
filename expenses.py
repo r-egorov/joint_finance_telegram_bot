@@ -210,6 +210,28 @@ def _parse_message(raw_message: str) -> ParsedMessage:
     return ParsedMessage(amount=int(amount), category_text=category_text)
 
 
+def get_budget_months(budget_id: int) -> List:
+    """
+    Gets a list of months in which expenses were added in the budget
+
+    Parameters:
+          budget_id: int — the budget's id
+    Returns:
+          months_list: List — a list of months needed
+    """
+    cursor = db.get_cursor()
+    cursor.execute(
+        "SELECT DISTINCT STRFTIME('%Y-%m', created) "
+        "FROM expenses "
+        f"WHERE budget_id = {budget_id}"
+    )
+    rows = cursor.fetchall()
+    months_list = []
+    for row in rows:
+        months_list.append(row[0])
+    return months_list
+
+
 def get_year_month_now() -> str:
     """ Returns this month's year-month in '%Y-%m' format """
     now = get_datetimenow()
@@ -227,3 +249,26 @@ def get_datetimenow() -> datetime.datetime:
     tz = pytz.timezone("Europe/Moscow")
     now = datetime.datetime.now(tz)
     return now
+
+
+def month_name(year_month: str) -> str:
+    """ Gets the month's name in Russian """
+    months = {
+        '01': 'Январь',
+        '02': 'Февраль',
+        '03': 'Март',
+        '04': 'Апрель',
+        '05': 'Май',
+        '06': 'Июнь',
+        '07': 'Июль',
+        '08': 'Август',
+        '09': 'Сентябрь',
+        '10': 'Октябрь',
+        '11': 'Ноябрь',
+        '12': 'Декабрь'
+    }
+    month_num = year_month[5:]
+    year = year_month[0:4]
+    month = months[month_num]
+    result = f"{year} {month}"
+    return result

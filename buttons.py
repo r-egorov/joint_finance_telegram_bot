@@ -1,5 +1,5 @@
 import emoji
-from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup,\
+from aiogram.types import ReplyKeyboardMarkup,\
     KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from typing import List
 from expenses import Expense
@@ -71,4 +71,22 @@ def mrkup_chs_budget(budgets_list: List[Budget]) -> InlineKeyboardMarkup:
     for budget in budgets_list:
         btn_inln_chs_budget = btn_chs_budget(budget)
         kb_mrkup.add(btn_inln_chs_budget)
+    return kb_mrkup
+
+
+def mrkup_chs_month_stats(month_list: List) -> InlineKeyboardMarkup:
+    """
+    Makes a markup of as many month buttons as there are in the budget
+
+    Parameters:
+        month_list: List — a list of year-month in '%Y-%m' format
+    Returns:
+        kb_mrkup: InlineKeyboardMarkup — a markup of buttons to choose the
+        month
+    """
+    kb_mrkup = InlineKeyboardMarkup()
+    for month in month_list:
+        btn_inln_chs_month = InlineKeyboardButton(month,
+                                                  callback_data=f"mstats{month}")
+        kb_mrkup.add(btn_inln_chs_month)
     return kb_mrkup
