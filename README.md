@@ -4,11 +4,11 @@ It is availible only in Russian so far.
 
 Each user has their own personal budget as well as joint budget with the other user.
 
-The users can add expenses to the database by sending a message of the "*500 cafe*" template. In this case an expense of 500 roubles will be added in the "*cafe*" category. The expenses can be deleted by writing the command "*/del<id of the expense>*", which is sent by the bot, so it would be easy to click on.
+The users can add expenses to the database by sending a message of the "*500 cafe*" template. In this case an expense of 500 roubles will be added in the "*cafe*" category. The expenses can be deleted by clicking on the "Delete" inline button, which will be sent by the bot.
 
-The categories can be accessed with aliases, specified in the database. Custom categories and custom aliases for them are coming in the later versions.
+The categories can be accessed with aliases, specified in the database. One can get all the categories by using yhe "/list_categories" command. Custom categories and custom aliases for them are coming in the later versions.
 
-The users can request month statistics for one of their budgets or last ten expenses.
+The users can request month statistics for one of their budgets, last ten expenses in the budget and overall statistics on their expenses.
 
 The libraries used for this projects:
 * aiogram
